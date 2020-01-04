@@ -66,14 +66,14 @@ do
 	content=$(tail --lines=+4 $f | markdown | tr '\n' ' ' | sed 's_[&\]_\\&_g')
 	
 	# Insert title and content into post template
-	echo -n "Processing $(basename $f)..."
+	echo -n "Processing file '$(basename $f)'..."
 	title=$(head --lines=1 $f)
 	sed "s_!POSTNAME!_${title}_" $POST_TEMPLATE > $POSTS_DIR$(basename $f).html
 	sed -i "s_!CONTENT!_${content}_" $POSTS_DIR$(basename $f).html
-	echo -e "\e[1;32m Done.\e[0m"
+	echo -ne "\e[1;32m Done.\e[0m"
 
 	# Catch all tags
-	echo -n 'Processing tags...'
+	echo -n ' Processing tags...'
 	tags=$(sed -n '3p' $f | grep -wo '[[:alnum:]]*')
 
 	# Process each tag
@@ -84,4 +84,6 @@ do
 
 		# TODO: Append this post's title and description to a list of all posts with this tag
 	done
+	echo -e "\e[1;32m Done.\e[0m"
+
 done
