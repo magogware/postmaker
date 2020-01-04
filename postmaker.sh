@@ -71,4 +71,17 @@ do
 	sed "s_!POSTNAME!_${title}_" $POST_TEMPLATE > $POSTS_DIR$(basename $f).html
 	sed -i "s_!CONTENT!_${content}_" $POSTS_DIR$(basename $f).html
 	echo -e "\e[1;32m Done.\e[0m"
+
+	# Catch all tags
+	echo -n 'Processing tags...'
+	tags=$(sed -n '3p' $f | grep -wo '[[:alnum:]]*')
+
+	# Process each tag
+	for tag in $tags
+	do
+		# Make a directory for the tag, if not already present
+		mkdir --parents $TAGS_DIR$tag
+
+		# TODO: Append this post's title and description to a list of all posts with this tag
+	done
 done
