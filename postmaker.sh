@@ -61,13 +61,14 @@ fi
 
 for f in $RAW_DIR*
 do
+	
+	# Make sure content has any special characters escaped
+	content=$(tail --lines=+4 $f | markdown | tr '\n' ' ' | sed 's_[&\]_\\&_g')
+	
+	# Insert title and content into post template
 	echo -n "Processing $(basename $f)..."
-	#echo -n " Inserting title..."
 	title=$(head --lines=1 $f)
-	content=$(tail --lines=+4 $f | markdown)
 	sed "s_!POSTNAME!_${title}_" $POST_TEMPLATE > $POSTS_DIR$(basename $f).html
-	# TODO: Escape content to avoid interfering with sed command
 	sed -i "s_!CONTENT!_${content}_" $POSTS_DIR$(basename $f).html
-	#echo -n " Inserting content..."
 	echo -e "\e[1;32m Done.\e[0m"
 done
