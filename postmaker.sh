@@ -60,22 +60,22 @@ else
 	exit
 fi
 
-for f in $RAW_DIR*
+for RAW_FILE in $RAW_DIR*
 do
 	
 	# Make sure content has any special characters escaped
-	content=$(tail --lines=+4 $f | markdown | tr '\n' ' ' | sed 's_[&\]_\\&_g')
+	content=$(tail --lines=+4 $RAW_FILE | markdown | tr '\n' ' ' | sed 's_[&\]_\\&_g')
 	
 	# Insert title and content into post template
-	echo -n "Processing file '$(basename $f)'..."
-	title=$(head --lines=1 $f)
-	sed "s_!POSTNAME!_${title}_" $POST_TEMPLATE > $POSTS_DIR$(basename $f).html
-	sed -i "s_!CONTENT!_${content}_" $POSTS_DIR$(basename $f).html
+	echo -n "Processing file '$(basename $RAW_FILE)'..."
+	title=$(head --lines=1 $RAW_FILE)
+	sed "s_!POSTNAME!_${title}_" $POST_TEMPLATE > $POSTS_DIR$(basename $RAW_FILE).html
+	sed -i "s_!CONTENT!_${content}_" $POSTS_DIR$(basename $RAW_FILE).html
 	echo -ne "\e[1;32m Done.\e[0m"
 
 	# Catch all tags
 	echo -n ' Processing tags...'
-	tags=$(sed -n '3p' $f | grep -wo '[[:alnum:]]*')
+	tags=$(sed -n '3p' $RAW_FILE | grep -wo '[[:alnum:]]*')
 
 	# Process each tag
 	for tag in $tags
@@ -84,8 +84,8 @@ do
 		mkdir --parents $TAGS_DIR$tag
 
 		# Append this post's title and description to a list of all posts with this tag
-		POST_LINK=/$(basename $POSTS_DIR)/$(basename $f).html
-		desc=$(sed -n '2p' $f | sed 's_[&\]_\\&_g')
+		POST_LINK=/$(basename $POSTS_DIR)/$(basename $RAW_FILE).html
+		desc=$(sed -n '2p' $RAW_FILE | sed 's_[&\]_\\&_g')
 		# TODO: Fix underscores in raw file filename breaking sed command
 		entry=$(sed "s_!POSTFILENAME!_${POST_LINK}_" $ENTRY_TEMPLATE | sed "s_!POSTNAME!_${title}_" | sed "s_!POSTDESC!_${desc}_")
 		echo $entry >> $TAGS_DIR$tag/index.html
