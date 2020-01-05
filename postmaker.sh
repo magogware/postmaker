@@ -6,6 +6,7 @@ TEMPLATE_DIR=$PWD/
 POST_TEMPLATE=${TEMPLATE_DIR}post_template.html
 INDEX_TEMPLATE=${TEMPLATE_DIR}index_template.html
 ENTRY_TEMPLATE=${TEMPLATE_DIR}entry_template.html
+MAIN_INDEX_FILE=$PWD/blog.html
 
 # Check that template files exist
 echo -n 'Finding template files...'
@@ -73,6 +74,14 @@ do
 	sed -i "s_!CONTENT!_${content}_" $POSTS_DIR$(basename $RAW_FILE).html
 	echo -ne "\e[1;32m Done.\e[0m"
 
+	# Create the HTML for a truncated version of the post (for listing
+	# on index pages
+	POST_LINK=/$(basename $POSTS_DIR)/$(basename $RAW_FILE).html
+	desc=$(sed -n '2p' $RAW_FILE | sed 's_[&\]_\\&_g')
+	# TODO: Fix underscores in raw file filename breaking sed command
+	entry=$(sed "s_!POSTFILENAME!_${POST_LINK}_" $ENTRY_TEMPLATE | sed "s_!POSTNAME!_${title}_" | sed "s_!POSTDESC!_${desc}_")
+
+
 	# Catch all tags
 	echo -n ' Processing tags...'
 	tags=$(sed -n '3p' $RAW_FILE | grep -wo '[[:alnum:]]*')
@@ -83,13 +92,13 @@ do
 		# Make a directory for the tag, if not already present
 		mkdir --parents $TAGS_DIR$tag
 
-		# Append this post's title and description to a list of all posts with this tag
-		POST_LINK=/$(basename $POSTS_DIR)/$(basename $RAW_FILE).html
-		desc=$(sed -n '2p' $RAW_FILE | sed 's_[&\]_\\&_g')
-		# TODO: Fix underscores in raw file filename breaking sed command
-		entry=$(sed "s_!POSTFILENAME!_${POST_LINK}_" $ENTRY_TEMPLATE | sed "s_!POSTNAME!_${title}_" | sed "s_!POSTDESC!_${desc}_")
+		# Append this post's truncated info to a list of all posts with this tag
 		echo $entry >> $TAGS_DIR$tag/index.html
+
 	done
 	echo -e "\e[1;32m Done.\e[0m"
+
+	# Add this post's truncated info to the main index
+	echo $entry >> $MAIN_INDEX_FILE
 
 done
