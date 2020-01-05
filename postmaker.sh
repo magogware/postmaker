@@ -100,6 +100,16 @@ do
 	echo $entry >> $MAIN_INDEX_FILE
 done
 
+# Build an index for each tag
+tags=$(ls $TAGS_DIR)
+for TAG_DIR in $tags
+do
+	TAG_DIR=$TAGS_DIR$TAG_DIR
+	index=$(sed 's_[&\]_\\&_g' $TAG_DIR/index.html)
+	sed "s_!CONTENT!_${index}_" $INDEX_TEMPLATE > $TAG_DIR/index.html
+	sed -i 's_!INDEXNAME!_Blog_g' $TAG_DIR/index.html
+done
+
 # Build main index by adding the list of all entries into the index template
 index=$(sed 's_[&\]_\\&_g' $MAIN_INDEX_FILE)
 sed "s_!CONTENT!_${index}_" $INDEX_TEMPLATE > $MAIN_INDEX_FILE
