@@ -24,9 +24,8 @@ fi
 # Remove any existing posts and tags
 # so that we can update them
 echo -n 'Removing old posts, tags, and index pages... '
-rm -r $POSTS_DIR $TAGS_DIR &> /dev/null
-
-if [ ! -d $POSTS_DIR ] && [ ! -d $TAGS_DIR ]
+rm -r $POSTS_DIR $TAGS_DIR $MAIN_INDEX_FILE &> /dev/null
+if [ ! -d $POSTS_DIR ] && [ ! -d $TAGS_DIR ] && [ ! -f $MAIN_INDEX_FILE ]
 then
 	echo -e '\e[1;32m Done.\e[0m'
 else
@@ -38,8 +37,6 @@ fi
 # Recreate directories for posts and tags
 echo -n 'Recreating directories for posts and tag index pages...'
 mkdir $POSTS_DIR $TAGS_DIR &> /dev/null
-
-# Check that it worked
 if [ -d $POSTS_DIR ] && [ -d $TAGS_DIR ]
 then
 	echo -e '\e[1;32m Done.\e[0m'
@@ -61,6 +58,8 @@ else
 	exit
 fi
 
+# Loop through and process all raw post files
+# in the raw file directory
 for RAW_FILE in $RAW_DIR*
 do
 	
@@ -81,7 +80,6 @@ do
 	# TODO: Fix underscores in raw file filename breaking sed command
 	entry=$(sed "s_!POSTFILENAME!_${POST_LINK}_" $ENTRY_TEMPLATE | sed "s_!POSTNAME!_${title}_" | sed "s_!POSTDESC!_${desc}_")
 
-
 	# Catch all tags
 	echo -n ' Processing tags...'
 	tags=$(sed -n '3p' $RAW_FILE | grep -wo '[[:alnum:]]*')
@@ -100,5 +98,9 @@ do
 
 	# Add this post's truncated info to the main index
 	echo $entry >> $MAIN_INDEX_FILE
-
 done
+
+# Build main index by adding the list of all entries into the index template
+index=$(sed 's_[&\]_\\&_g' $MAIN_INDEX_FILE)
+sed "s_!CONTENT!_${index}_" $INDEX_TEMPLATE > $MAIN_INDEX_FILE
+sed -i 's_!INDEXNAME!_Blog_g' $MAIN_INDEX_FILE
