@@ -19,8 +19,6 @@ else
 	exit
 fi
 
-
-
 # Remove any existing posts and tags
 # so that we can update them
 echo -n 'Removing old posts, tags, and index pages... '
@@ -64,7 +62,7 @@ for RAW_FILE in $RAW_DIR*
 do
 	
 	# Make sure content has any special characters escaped
-	content=$(tail --lines=+4 $RAW_FILE | markdown | tr '\n' ' ' | sed 's_[&\]_\\&_g')
+	content=$(tail --lines=+4 $RAW_FILE | markdown | tr '\n' ' ' | sed 's_[_&\]_\\&_g')
 	
 	# Insert title and content into post template
 	echo -n "Processing file '$(basename $RAW_FILE)'..."
@@ -76,7 +74,7 @@ do
 	# Create the HTML for a truncated version of the post (for listing
 	# on index pages
 	POST_LINK=/$(basename $POSTS_DIR)/$(basename $RAW_FILE).html
-	desc=$(sed -n '2p' $RAW_FILE | sed 's_[&\]_\\&_g')
+	desc=$(sed -n '2p' $RAW_FILE | sed 's_[_&\]_\\&_g')
 	# TODO: Fix underscores in raw file filename breaking sed command
 	entry=$(sed "s_!POSTFILENAME!_${POST_LINK}_" $ENTRY_TEMPLATE | sed "s_!POSTNAME!_${title}_" | sed "s_!POSTDESC!_${desc}_")
 
@@ -105,12 +103,12 @@ tags=$(ls $TAGS_DIR)
 for TAG_DIR in $tags
 do
 	TAG_DIR=$TAGS_DIR$TAG_DIR
-	index=$(sed 's_[&\]_\\&_g' $TAG_DIR/index.html)
+	index=$(sed 's_[_&\]_\\&_g' $TAG_DIR/index.html)
 	sed "s_!CONTENT!_${index}_" $INDEX_TEMPLATE > $TAG_DIR/index.html
 	sed -i 's_!INDEXNAME!_Blog_g' $TAG_DIR/index.html
 done
 
 # Build main index by adding the list of all entries into the index template
-index=$(sed 's_[&\]_\\&_g' $MAIN_INDEX_FILE)
+index=$(sed 's_[_&\]_\\&_g' $MAIN_INDEX_FILE)
 sed "s_!CONTENT!_${index}_" $INDEX_TEMPLATE > $MAIN_INDEX_FILE
 sed -i 's_!INDEXNAME!_Blog_g' $MAIN_INDEX_FILE
