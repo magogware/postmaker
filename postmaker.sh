@@ -56,13 +56,32 @@ else
 	exit
 fi
 
+# Define a function to escape special characters in content
+sanitize () { sed 's_[_&\]_\\&_g' }
+
+# Define functions to retrieve data from a raw post file
+get_tags () { sed -n '3p' | grep -wo '[[:alnum:]]*' | sanitize; }
+get_desc () { sed -n '2p' | sanitize; }
+get_title () { sed -n '1p' | sanitize;}
+get_content () { tail --lines=+4 | markdown | tr '\n' ' ' | sanitize; }
+
+# Define functions to insert content into a template
+insert () { sed "s_!${1}!_${2}_g"; }
+insert_content () { cat $POST_TEMPLATE | insert 'CONTENT' $(get_content); }
+#insert_tags () { ; }
+insert_title () { cat $ENTRY_TEMPLATE | insert 'POSTNAME' $(get_title); }
+insert_desc () { insert_title | insert 'POSTDESC' $(get_desc); }
+insert_post_link () { insert_desc | insert 'POSTFILENAME' $1; }
+#insert_tag_link () { ; }
+insert_entries () { cat $INDEX_TEMPLATE | insert 'ENTRIES' $1; }
+
 # Loop through and process all raw post files
 # in the raw file directory
 for RAW_FILE in $RAW_DIR*
 do
 	
 	# Make sure content has any special characters escaped
-	content=$(tail --lines=+4 $RAW_FILE | markdown | tr '\n' ' ' | sed 's_[_&\]_\\&_g')
+	content=$(tail --lines=+4 $RAW_FILE | markdown | tr '\n' ' ' | sanitize)
 	
 	# Insert title and content into post template
 	echo -n "Processing file '$(basename $RAW_FILE)'..."
@@ -74,7 +93,7 @@ do
 	# Create the HTML for a truncated version of the post (for listing
 	# on index pages
 	POST_LINK=/$(basename $POSTS_DIR)/$(basename $RAW_FILE).html
-	desc=$(sed -n '2p' $RAW_FILE | sed 's_[_&\]_\\&_g')
+	desc=$(sed -n '2p' $RAW_FILE | sanitize)
 	# TODO: Fix underscores in raw file filename breaking sed command
 	entry=$(sed "s_!POSTFILENAME!_${POST_LINK}_" $ENTRY_TEMPLATE | sed "s_!POSTNAME!_${title}_" | sed "s_!POSTDESC!_${desc}_")
 
@@ -103,12 +122,12 @@ tags=$(ls $TAGS_DIR)
 for TAG_DIR in $tags
 do
 	TAG_DIR=$TAGS_DIR$TAG_DIR
-	index=$(sed 's_[_&\]_\\&_g' $TAG_DIR/index.html)
+	index=$(cat $TAG_DIR/index.html | sanitize)
 	sed "s_!CONTENT!_${index}_" $INDEX_TEMPLATE > $TAG_DIR/index.html
 	sed -i 's_!INDEXNAME!_Blog_g' $TAG_DIR/index.html
 done
 
 # Build main index by adding the list of all entries into the index template
-index=$(sed 's_[_&\]_\\&_g' $MAIN_INDEX_FILE)
+index=$(cat $MAIN_INDEX_FILE | sanitize)
 sed "s_!CONTENT!_${index}_" $INDEX_TEMPLATE > $MAIN_INDEX_FILE
 sed -i 's_!INDEXNAME!_Blog_g' $MAIN_INDEX_FILE
