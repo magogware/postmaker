@@ -57,52 +57,40 @@ else
 fi
 
 # Define a function to escape special characters in content
-sanitize () { sed 's_[_&\]_\\&_g' }
+sanitize () { sed 's_[_&\]_\\&_g'; }
 
 # Define functions to retrieve data from a raw post file
 get_tags () { sed -n '3p' | grep -wo '[[:alnum:]]*' | sanitize; }
 get_desc () { sed -n '2p' | sanitize; }
-get_title () { sed -n '1p' | sanitize;}
+get_title () { sed -n '1p' | sanitize; }
 get_content () { tail --lines=+4 | markdown | tr '\n' ' ' | sanitize; }
 
 # Define functions to insert content into a template
 insert () { sed "s_!${1}!_${2}_g"; }
-insert_content () { cat $POST_TEMPLATE | insert 'CONTENT' $(get_content); }
+insert_content () { insert 'CONTENT' "$(cat $1 | get_content)"; }
+insert_entries () { insert 'ENTRIES' "$(cat $1)"; }
+insert_title () { insert 'POSTNAME' "$(cat $1 | get_title)"; }
+insert_desc () { insert 'POSTDESC' "$(cat $1 | get_desc)"; }
+insert_post_link () { insert 'POSTFILENAME' $1; }
+insert_index_title () { insert 'INDEXNAME' $1; }
 #insert_tags () { ; }
-insert_title () { cat $ENTRY_TEMPLATE | insert 'POSTNAME' $(get_title); }
-insert_desc () { insert_title | insert 'POSTDESC' $(get_desc); }
-insert_post_link () { insert_desc | insert 'POSTFILENAME' $1; }
 #insert_tag_link () { ; }
-insert_entries () { cat $INDEX_TEMPLATE | insert 'ENTRIES' $1; }
 
-# Loop through and process all raw post files
-# in the raw file directory
+# Loop through and process all raw post files in the raw file directory
 for RAW_FILE in $RAW_DIR*
 do
-	
-	# Make sure content has any special characters escaped
-	content=$(tail --lines=+4 $RAW_FILE | markdown | tr '\n' ' ' | sanitize)
-	
+			
 	# Insert title and content into post template
 	echo -n "Processing file '$(basename $RAW_FILE)'..."
-	title=$(head --lines=1 $RAW_FILE)
-	sed "s_!POSTNAME!_${title}_" $POST_TEMPLATE > $POSTS_DIR$(basename $RAW_FILE).html
-	sed -i "s_!CONTENT!_${content}_" $POSTS_DIR$(basename $RAW_FILE).html
+	cat $POST_TEMPLATE | insert_content $RAW_FILE | insert_title $RAW_FILE > $POSTS_DIR$(basename RAW_FILE).html
 	echo -ne "\e[1;32m Done.\e[0m"
 
-	# Create the HTML for a truncated version of the post (for listing
-	# on index pages
+	# Create a truncated version of the post for index pages
 	POST_LINK=/$(basename $POSTS_DIR)/$(basename $RAW_FILE).html
-	desc=$(sed -n '2p' $RAW_FILE | sanitize)
-	# TODO: Fix underscores in raw file filename breaking sed command
-	entry=$(sed "s_!POSTFILENAME!_${POST_LINK}_" $ENTRY_TEMPLATE | sed "s_!POSTNAME!_${title}_" | sed "s_!POSTDESC!_${desc}_")
-
-	# Catch all tags
-	echo -n ' Processing tags...'
-	tags=$(sed -n '3p' $RAW_FILE | grep -wo '[[:alnum:]]*')
+	entry=$(cat $ENTRY_TEMPLATE | insert_title $RAW_FILE | insert_desc $RAW_FILE | insert_post_link $POST_LINK)
 
 	# Process each tag
-	for tag in $tags
+	for tag in $(cat $RAW_FILE | get_tags)
 	do
 		# Make a directory for the tag, if not already present
 		mkdir --parents $TAGS_DIR$tag
@@ -117,17 +105,13 @@ do
 	echo $entry >> $MAIN_INDEX_FILE
 done
 
-# Build an index for each tag
-tags=$(ls $TAGS_DIR)
-for TAG_DIR in $tags
+# Build an index page for each tag
+TAG_DIRS=$(ls $TAGS_DIR)
+for TAG_DIR in $TAG_DIRS
 do
-	TAG_DIR=$TAGS_DIR$TAG_DIR
-	index=$(cat $TAG_DIR/index.html | sanitize)
-	sed "s_!CONTENT!_${index}_" $INDEX_TEMPLATE > $TAG_DIR/index.html
-	sed -i 's_!INDEXNAME!_Blog_g' $TAG_DIR/index.html
+	index=$TAGS_DIR$TAG_DIR/index.html
+	cat $INDEX_TEMPLATE | insert_entries $index | insert_index_title $TAG_DIR > $TAGS_DIR$TAG_DIR/index.html
 done
 
 # Build main index by adding the list of all entries into the index template
-index=$(cat $MAIN_INDEX_FILE | sanitize)
-sed "s_!CONTENT!_${index}_" $INDEX_TEMPLATE > $MAIN_INDEX_FILE
-sed -i 's_!INDEXNAME!_Blog_g' $MAIN_INDEX_FILE
+cat $INDEX_TEMPLATE | insert_entries $MAIN_INDEX_FILE | insert_index_title "Blog" > $MAIN_INDEX_FILE
