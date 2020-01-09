@@ -82,7 +82,7 @@ do
 			
 	# Insert title and content into post template
 	echo -n "Processing file '$(basename $RAW_FILE)'..."
-	cat $POST_TEMPLATE | insert_content $RAW_FILE | insert_title $RAW_FILE > $POSTS_DIR$(basename RAW_FILE).html
+	cat $POST_TEMPLATE | insert_content $RAW_FILE | insert_title $RAW_FILE > $POSTS_DIR$(basename $RAW_FILE).html
 	echo -ne "\e[1;32m Done.\e[0m"
 
 	# Create a truncated version of the post for index pages
