@@ -61,43 +61,54 @@ fi
 sanitize () { sed 's_[_&\]_\\&_g'; }
 
 # Define functions to retrieve data from a raw post file
-get_tags () { sed -n '3p' | grep -wo '[[:alnum:]]*' | sanitize; }
+get_tags () { sed -n '3p' | grep -wo '[[:alnum:]]*'; }
 get_desc () { sed -n '2p' | sanitize; }
 get_title () { sed -n '1p' | sanitize; }
-get_content () { tail --lines=+4 | markdown | tr '\n' ' ' | sanitize; }
+get_content () { tail --lines=+4 | markdown; }
+
+# Get the line number of a pattern ($1) appearing in stdin
+get_line_number_of () { grep -n $1 | grep -Eo '^[^:]+'; }
+
+# Insert a file's ($1) contents at the line number of a pattern ($2) in a file ($3)
+insert_file_at_pattern_in () {
+	line_num=$(cat $3 | get_line_number_of $2)
+	cat $3 | head --lines=$(($line_num - 1)) > tmp
+	cat $3 | tail --lines=+$(($line_num + 1)) | cat $1 - >> tmp
+	cat tmp > $3
+	rm tmp
+}
 
 # Define functions to insert content into a template
 insert () { sed "s_!${1}!_${2}_g"; }
-insert_content () { insert 'CONTENT' "$(cat $1 | get_content)"; }
-insert_entries () { insert 'ENTRIES' "$(cat $1)"; }
 insert_title () { insert 'POSTNAME' "$(cat $1 | get_title)"; }
 insert_desc () { insert 'POSTDESC' "$(cat $1 | get_desc)"; }
 insert_post_link () { insert 'POSTFILENAME' $1; }
 insert_index_title () { insert 'INDEXNAME' $1; }
 insert_tag_name () { insert 'TAGNAME' $1; }
 insert_tag_link () { insert 'TAGLINK' $1; }
-insert_tags () { insert 'TAGS' "$(cat $1)"; }
 
 # Loop through and process all raw post files in the raw file directory
 for RAW_FILE in $RAW_DIR*
 do
 	# Make a complete tag template for each tag and add them to a file
-	tags=()
 	for tag in $(cat $RAW_FILE | get_tags)
 	do
 		TAG_LINK=/$(basename $TAGS_DIR)/$tag/index.html
-		tags+=$(cat $TAG_TEMPLATE | insert_tag_link $TAG_LINK | insert_tag_name $tag)
+		cat $TAG_TEMPLATE | insert_tag_link $TAG_LINK | insert_tag_name $tag >> tags_file
 	done
-	echo $tags > temp_tags
 
 	# Insert title, content, and tags into post template
 	echo -n "Processing file '$(basename $RAW_FILE)'..."
-	cat $POST_TEMPLATE | insert_content $RAW_FILE | insert_title $RAW_FILE | insert_tags temp_tags > $POSTS_DIR$(basename $RAW_FILE).html
+	cat $POST_TEMPLATE | insert_title $RAW_FILE > $POSTS_DIR$(basename $RAW_FILE).html
+	cat $RAW_FILE | get_content > content_file
+	insert_file_at_pattern_in content_file '!CONTENT!' $POSTS_DIR$(basename $RAW_FILE).html
+	insert_file_at_pattern_in tags_file '!TAGS!' $POSTS_DIR$(basename $RAW_FILE).html
 	echo -ne "\e[1;32m Done.\e[0m"
 
 	# Create a truncated version of the post for index pages
 	POST_LINK=/$(basename $POSTS_DIR)/$(basename $RAW_FILE).html
-	entry=$(cat $ENTRY_TEMPLATE | insert_title $RAW_FILE | insert_desc $RAW_FILE | insert_post_link $POST_LINK | insert_tags temp_tags)
+	cat $ENTRY_TEMPLATE | insert_title $RAW_FILE | insert_desc $RAW_FILE | insert_post_link $POST_LINK >> entry_file
+	insert_file_at_pattern_in tags_file '!TAGS!' entry_file
 
 	# Process each tag
 	for tag in $(cat $RAW_FILE | get_tags)
@@ -106,30 +117,31 @@ do
 		mkdir --parents $TAGS_DIR$tag
 
 		# Append this post's truncated info to a temporary file with all entries with this tag
-		echo $entry >> $TAGS_DIR$tag/entries.html
+		cat entry_file >> $TAGS_DIR$tag/entries
 
 	done
 	echo -e "\e[1;32m Done.\e[0m"
 
 	# Add this post's truncated info to a temporary file containing all entries
-	echo $entry >> temp_entries
+	cat entry_file >> entries
 
-	# Remove the temporary file containing marked-up tags
-	rm temp_tags
+	# Remove temporary files
+	rm tags_file entry_file content_file
 done
 
 # Build an index page for each tag
 TAG_DIRS=$(ls $TAGS_DIR)
 for TAG_DIR in $TAG_DIRS
 do
-	temp_entries=$TAGS_DIR$TAG_DIR/entries.html
-	cat $INDEX_TEMPLATE | insert_entries $temp_entries | insert_index_title $TAG_DIR > $TAGS_DIR$TAG_DIR/index.html
+	temp_entries=$TAGS_DIR$TAG_DIR/entries
+	cat $INDEX_TEMPLATE | insert_index_title $TAG_DIR > $TAGS_DIR$TAG_DIR/index.html
+	insert_file_at_pattern_in $temp_entries '!ENTRIES!' $TAGS_DIR$TAG_DIR/index.html
+
 	rm $temp_entries
 done
 
-echo test
-
 # Build main index by adding the list of all entries into the index template
-temp_entries=temp_entries
-cat $INDEX_TEMPLATE | insert_entries $temp_entries | insert_index_title Blog > $MAIN_INDEX_FILE
-rm temp_entries
+temp_entries=entries
+cat $INDEX_TEMPLATE | insert_index_title Blog > $MAIN_INDEX_FILE
+insert_file_at_pattern_in $temp_entries '!ENTRIES!' $MAIN_INDEX_FILE
+rm $temp_entries
