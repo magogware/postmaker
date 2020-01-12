@@ -1,10 +1,11 @@
 # Set up filenames and locations
 RAW_DIR=$PWD/raw/
-POSTS_DIR=$PWD/posts/
-TAGS_DIR=$PWD/tags/
 TEMPLATE_DIR=$PWD/templates/
+OUTPUT_DIR=$PWD/site
+POSTS_DIR=$OUTPUT_DIR/posts/
+TAGS_DIR=$OUTPUT_DIR/tags/
 POST_TEMPLATE=${TEMPLATE_DIR}post_template.html
 INDEX_TEMPLATE=${TEMPLATE_DIR}index_template.html
 ENTRY_TEMPLATE=${TEMPLATE_DIR}entry_template.html
 TAG_TEMPLATE=${TEMPLATE_DIR}tag_template.html
-MAIN_INDEX_FILE=$PWD/blog.html
+MAIN_INDEX_FILE=$OUTPUT_DIR/blog.html

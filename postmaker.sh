@@ -27,7 +27,7 @@ fi
 
 # Recreate directories for posts and tags
 echo -n 'Recreating directories for posts and tag index pages...'
-mkdir $POSTS_DIR $TAGS_DIR &> /dev/null
+mkdir --parents $POSTS_DIR $TAGS_DIR &> /dev/null
 if [ -d $POSTS_DIR ] && [ -d $TAGS_DIR ]
 then
 	echo -e '\e[1;32m Done.\e[0m'
