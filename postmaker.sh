@@ -148,7 +148,7 @@ fi
 # Build main index by adding the list of all entries into the index template
 echo -n 'Creating main index page...'
 temp_entries=entries
-cat $INDEX_TEMPLATE | insert_index_title Blog > $MAIN_INDEX_FILE
+cat $INDEX_TEMPLATE | insert_index_title $MAIN_INDEX_NAME > $MAIN_INDEX_FILE
 insert_file_at_pattern_in $temp_entries '!ENTRIES!' $MAIN_INDEX_FILE
 rm $temp_entries
 echo -e "\e[1;32m Done.\e[0m"
