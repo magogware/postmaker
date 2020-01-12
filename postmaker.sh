@@ -1,5 +1,5 @@
 # Run the config file (either the supplied file, or the default config)
-source ${1:-config}
+source ${1:-$(dirname "$0")/config}
 
 # Check that template files exist
 echo -n 'Finding template files...'
