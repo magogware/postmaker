@@ -1,0 +1,11 @@
+This is the post's title (for entries on index pages)
+This is a description of the post (also for entries on index pages)
+tags must be separated by spaces and only use letters
+# Post content (i.e.: the stuff on the post's page)
+All of your content should be written using markdown. That makes it
+super easy to write *and* super easy to convert into proper HTML.
+One more note: please follow the structure of this raw post exactly.
+Basically, that means: title is the first line, description is the
+second line, all tags on the third line, and content (in markdown)
+from the fourth line onwards. Just make sure you watch that return
+key, chump, and we won't have any problems ;-)
