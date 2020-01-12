@@ -79,12 +79,17 @@ insert_index_title () { insert 'INDEXNAME' $1; }
 insert_tag_name () { insert 'TAGNAME' $1; }
 insert_tag_link () { insert 'TAGLINK' $1; }
 
+# Create a boolean to store whether any posts have tags
+tags_present=false
+
 # Loop through and process all raw post files in the raw file directory
 for RAW_FILE in $RAW_DIR*
 do
 	# Make a complete tag template for each tag and add them to a file
+	touch tags_file
 	for tag in $(cat $RAW_FILE | get_tags)
 	do
+		tags_present=true
 		TAG_LINK=/$(basename $TAGS_DIR)/$tag/index.html
 		cat $TAG_TEMPLATE | insert_tag_link $TAG_LINK | insert_tag_name $tag >> tags_file
 	done
@@ -119,21 +124,26 @@ do
 	cat entry_file >> entries
 
 	# Remove temporary files
-	rm tags_file entry_file content_file
+	rm tags_file entry_file content_file &> /dev/null
 done
 
 # Build an index page for each tag
-echo -n 'Creating index pages for tags...'
-TAG_DIRS=$(ls $TAGS_DIR)
-for TAG_DIR in $TAG_DIRS
-do
-	temp_entries=$TAGS_DIR$TAG_DIR/entries
-	cat $INDEX_TEMPLATE | insert_index_title $TAG_DIR > $TAGS_DIR$TAG_DIR/index.html
-	insert_file_at_pattern_in $temp_entries '!ENTRIES!' $TAGS_DIR$TAG_DIR/index.html
+if [ "$tags_present" = true ] 
+then
+	echo -n 'Creating index pages for tags...'
+	TAG_DIRS=$(ls $TAGS_DIR)
+	for TAG_DIR in $TAG_DIRS
+	do
+		temp_entries=$TAGS_DIR$TAG_DIR/entries
+		cat $INDEX_TEMPLATE | insert_index_title $TAG_DIR > $TAGS_DIR$TAG_DIR/index.html
+		insert_file_at_pattern_in $temp_entries '!ENTRIES!' $TAGS_DIR$TAG_DIR/index.html
 
-	rm $temp_entries
-done
-echo -e "\e[1;32m Done.\e[0m"
+		rm $temp_entries
+	done
+	echo -e "\e[1;32m Done.\e[0m"
+else
+	echo 'No tags present. Not creating index pages for tags.'
+fi
 
 # Build main index by adding the list of all entries into the index template
 echo -n 'Creating main index page...'
