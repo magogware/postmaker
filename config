@@ -2,7 +2,7 @@
 RAW_DIR=$PWD/raw/
 POSTS_DIR=$PWD/posts/
 TAGS_DIR=$PWD/tags/
-TEMPLATE_DIR=$PWD/
+TEMPLATE_DIR=$PWD/templates/
 POST_TEMPLATE=${TEMPLATE_DIR}post_template.html
 INDEX_TEMPLATE=${TEMPLATE_DIR}index_template.html
 ENTRY_TEMPLATE=${TEMPLATE_DIR}entry_template.html
