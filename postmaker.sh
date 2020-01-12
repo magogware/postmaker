@@ -1,13 +1,5 @@
-# Set up filenames and locations
-RAW_DIR=$PWD/raw/
-POSTS_DIR=$PWD/posts/
-TAGS_DIR=$PWD/tags/
-TEMPLATE_DIR=$PWD/
-POST_TEMPLATE=${TEMPLATE_DIR}post_template.html
-INDEX_TEMPLATE=${TEMPLATE_DIR}index_template.html
-ENTRY_TEMPLATE=${TEMPLATE_DIR}entry_template.html
-TAG_TEMPLATE=${TEMPLATE_DIR}tag_template.html
-MAIN_INDEX_FILE=$PWD/blog.html
+# Run the config file (either the supplied file, or the default config)
+source ${1:-config}
 
 # Check that template files exist
 echo -n 'Finding template files...'
@@ -120,6 +112,7 @@ do
 		cat entry_file >> $TAGS_DIR$tag/entries
 
 	done
+	echo -n ' Processing tags...'
 	echo -e "\e[1;32m Done.\e[0m"
 
 	# Add this post's truncated info to a temporary file containing all entries
@@ -130,6 +123,7 @@ do
 done
 
 # Build an index page for each tag
+echo -n 'Creating index pages for tags...'
 TAG_DIRS=$(ls $TAGS_DIR)
 for TAG_DIR in $TAG_DIRS
 do
@@ -139,9 +133,12 @@ do
 
 	rm $temp_entries
 done
+echo -e "\e[1;32m Done.\e[0m"
 
 # Build main index by adding the list of all entries into the index template
+echo -n 'Creating main index page...'
 temp_entries=entries
 cat $INDEX_TEMPLATE | insert_index_title Blog > $MAIN_INDEX_FILE
 insert_file_at_pattern_in $temp_entries '!ENTRIES!' $MAIN_INDEX_FILE
 rm $temp_entries
+echo -e "\e[1;32m Done.\e[0m"
