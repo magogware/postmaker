@@ -71,7 +71,7 @@ insert_file_at_pattern_in () {
 }
 
 # Define functions to insert content into a template
-insert () { sed "s_!${1}!_${2}_g"; }
+insert () { sed "s;!${1}!;${2};g"; }
 insert_title () { insert 'POSTNAME' "$(cat $1 | get_title)"; }
 insert_desc () { insert 'POSTDESC' "$(cat $1 | get_desc)"; }
 insert_post_link () { insert 'POSTFILENAME' $1; }
