@@ -143,6 +143,7 @@ then
 	echo -e "\e[1;32m Done.\e[0m"
 else
 	echo 'No tags present. Not creating index pages for tags.'
+	rm -r $TAGS_DIR
 fi
 
 # Build main index by adding the list of all entries into the index template
